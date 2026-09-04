@@ -1,0 +1,122 @@
+{
+  "$defs": {
+    "CommandEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "minLength": 1,
+          "title": "Command",
+          "type": "string"
+        },
+        "exit_code": {
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "output_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Output Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "exit_code",
+        "output_sha256"
+      ],
+      "title": "CommandEvidence",
+      "type": "object"
+    },
+    "EvidenceBody": {
+      "additionalProperties": false,
+      "properties": {
+        "changed_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Changed Files",
+          "type": "array"
+        },
+        "ci_tests": {
+          "additionalProperties": {
+            "enum": [
+              "passed",
+              "failed",
+              "skipped",
+              "missing"
+            ],
+            "type": "string"
+          },
+          "title": "Ci Tests",
+          "type": "object"
+        },
+        "commands": {
+          "items": {
+            "$ref": "#/$defs/CommandEvidence"
+          },
+          "title": "Commands",
+          "type": "array"
+        },
+        "commit_sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Commit Sha",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "task_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]*$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "commit_sha",
+        "changed_files",
+        "commands",
+        "ci_tests",
+        "passed"
+      ],
+      "title": "EvidenceBody",
+      "type": "object"
+    },
+    "EvidenceMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "adc_version": {
+          "minLength": 1,
+          "title": "Adc Version",
+          "type": "string"
+        },
+        "generated_at": {
+          "minLength": 1,
+          "title": "Generated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generated_at",
+        "adc_version"
+      ],
+      "title": "EvidenceMeta",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "body": {
+      "$ref": "#/$defs/EvidenceBody"
+    },
+    "meta": {
+      "$ref": "#/$defs/EvidenceMeta"
+    }
+  },
+  "required": [
+    "body",
+    "meta"
+  ],
+  "title": "Evidence",
+  "type": "object"
+}

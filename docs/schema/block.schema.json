@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "TaskStatus": {
+      "enum": [
+        "ready",
+        "implementing",
+        "verified",
+        "merged",
+        "archived",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "goal": {
+      "minLength": 1,
+      "title": "Goal",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[A-Z][A-Z0-9_-]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "task_ids": {
+      "items": {
+        "pattern": "^[A-Z][A-Z0-9_-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Task Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "goal",
+    "status",
+    "task_ids"
+  ],
+  "title": "Block",
+  "type": "object"
+}

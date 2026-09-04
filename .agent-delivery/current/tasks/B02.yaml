@@ -1,0 +1,45 @@
+id: B02
+goal: Implement deterministic local and pull-request enforcement
+status: implementing
+owner: automation-bot
+scope:
+  files:
+    - adc/check.py
+    - adc/evidence.py
+    - adc/github.py
+    - adc/cli.py
+    - adc/schema.py
+    - hooks/pre-commit
+    - hooks/commit-msg
+    - .github/workflows/ci.yml
+    - docs/protocol.md
+    - docs/schema/evidence.schema.json
+    - tests/test_check.py
+    - tests/test_evidence.py
+    - tests/test_github.py
+  max_files: 13
+permissions:
+  repository_write: true
+  merge: false
+  external_write: false
+  production_write: false
+  workflow_write: true
+  dependency_write: false
+  infra_write: false
+acceptance:
+  - Local scope and sensitive-path violations fail closed
+  - PR head mismatches and absent junit IDs fail closed
+  - Evidence for identical inputs is byte-identical
+  - Post-merge evidence compares scoped blob hashes
+verification:
+  commands:
+    - pytest tests/test_check.py tests/test_evidence.py tests/test_github.py --junitxml=junit/B02.xml
+  ci_tests:
+    - tests/test_check.py::test_file_outside_scope_fails
+    - tests/test_check.py::test_missing_ci_test_fails
+    - tests/test_check.py::test_pr_head_mismatch_fails
+    - tests/test_evidence.py::test_evidence_is_byte_identical
+stop_conditions:
+  - GitHub Actions cannot provide an authoritative tested head SHA
+  - Required scope expands beyond the declared files
+  - External write permission is needed

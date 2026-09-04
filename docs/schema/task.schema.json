@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "Permissions": {
+      "additionalProperties": false,
+      "properties": {
+        "dependency_write": {
+          "default": false,
+          "title": "Dependency Write",
+          "type": "boolean"
+        },
+        "external_write": {
+          "title": "External Write",
+          "type": "boolean"
+        },
+        "infra_write": {
+          "default": false,
+          "title": "Infra Write",
+          "type": "boolean"
+        },
+        "merge": {
+          "title": "Merge",
+          "type": "boolean"
+        },
+        "production_write": {
+          "title": "Production Write",
+          "type": "boolean"
+        },
+        "repository_write": {
+          "title": "Repository Write",
+          "type": "boolean"
+        },
+        "workflow_write": {
+          "default": false,
+          "title": "Workflow Write",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository_write",
+        "merge",
+        "external_write",
+        "production_write"
+      ],
+      "title": "Permissions",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "max_files": {
+          "exclusiveMinimum": 0,
+          "title": "Max Files",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "files",
+        "max_files"
+      ],
+      "title": "Scope",
+      "type": "object"
+    },
+    "TaskStatus": {
+      "enum": [
+        "ready",
+        "implementing",
+        "verified",
+        "merged",
+        "archived",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    },
+    "Verification": {
+      "additionalProperties": false,
+      "properties": {
+        "ci_tests": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Ci Tests",
+          "type": "array"
+        },
+        "commands": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Commands",
+          "type": "array"
+        }
+      },
+      "required": [
+        "commands",
+        "ci_tests"
+      ],
+      "title": "Verification",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "acceptance": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Acceptance",
+      "type": "array"
+    },
+    "goal": {
+      "minLength": 1,
+      "title": "Goal",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[A-Z][A-Z0-9_-]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "owner": {
+      "minLength": 1,
+      "title": "Owner",
+      "type": "string"
+    },
+    "permissions": {
+      "$ref": "#/$defs/Permissions"
+    },
+    "scope": {
+      "$ref": "#/$defs/Scope"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "stop_conditions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Stop Conditions",
+      "type": "array"
+    },
+    "verification": {
+      "$ref": "#/$defs/Verification"
+    }
+  },
+  "required": [
+    "id",
+    "goal",
+    "status",
+    "owner",
+    "scope",
+    "permissions",
+    "acceptance",
+    "verification",
+    "stop_conditions"
+  ],
+  "title": "Task",
+  "type": "object"
+}

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+: "${ADC_TASK:?set ADC_TASK to the active task id (or use git commit --no-verify)}"
+
+exec uv run adc check "$ADC_TASK" --local --commit-msg-file "$1"

@@ -1,0 +1,5 @@
+id: PHASE2
+goal: Implement local and pull-request checks
+status: implementing
+task_ids:
+  - B02

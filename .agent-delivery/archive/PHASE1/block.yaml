@@ -1,0 +1,5 @@
+id: PHASE1
+goal: Define and validate the repository protocol
+status: archived
+task_ids:
+  - B01

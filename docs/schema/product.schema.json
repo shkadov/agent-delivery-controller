@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "ActionCeiling": {
+      "additionalProperties": false,
+      "properties": {
+        "dependency_write": {
+          "default": false,
+          "title": "Dependency Write",
+          "type": "boolean"
+        },
+        "external_write": {
+          "title": "External Write",
+          "type": "boolean"
+        },
+        "infra_write": {
+          "default": false,
+          "title": "Infra Write",
+          "type": "boolean"
+        },
+        "merge": {
+          "title": "Merge",
+          "type": "boolean"
+        },
+        "production_write": {
+          "title": "Production Write",
+          "type": "boolean"
+        },
+        "repository_write": {
+          "title": "Repository Write",
+          "type": "boolean"
+        },
+        "workflow_write": {
+          "default": false,
+          "title": "Workflow Write",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repository_write",
+        "merge",
+        "external_write",
+        "production_write"
+      ],
+      "title": "ActionCeiling",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_ceiling": {
+      "$ref": "#/$defs/ActionCeiling"
+    },
+    "agents": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Agents",
+      "type": "array"
+    },
+    "constraints": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Constraints",
+      "type": "array"
+    },
+    "goal": {
+      "minLength": 1,
+      "title": "Goal",
+      "type": "string"
+    },
+    "repositories": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Repositories",
+      "type": "array"
+    },
+    "sensitive_paths": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Sensitive Paths",
+      "type": "array"
+    }
+  },
+  "required": [
+    "goal",
+    "constraints",
+    "repositories",
+    "agents",
+    "action_ceiling"
+  ],
+  "title": "Product",
+  "type": "object"
+}

@@ -1,0 +1,104 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Resolve task from trusted commit trailers
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p junit
+          git log --format=%B "$BASE_SHA..$HEAD_SHA" \
+            | git interpret-trailers --parse \
+            | sed -n 's/^ADC-Task: //p' \
+            | sort -u > junit/task-id
+          test "$(wc -l < junit/task-id | tr -d ' ')" = 1
+          printf '%s\n' "$HEAD_SHA" > junit/tested-sha
+      - name: Run task verification commands
+        if: github.event_name == 'pull_request'
+        run: uv run adc ci-run "$(cat junit/task-id)" --result junit/commands.json
+      - name: Run project tests on main
+        if: github.event_name == 'push'
+        run: uv run pytest --junitxml=junit/all.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit
+          path: junit/
+          if-no-files-found: error
+
+  adc-check:
+    needs: [test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - uses: actions/download-artifact@v4
+        with:
+          name: junit
+          path: junit
+      - name: Require test job to pass
+        run: test "${{ needs.test.result }}" = success
+      - name: Check pull request evidence
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: >-
+          uv run adc check "$(cat junit/task-id)" --pr "$PR_NUMBER"
+          --junit junit --tested-sha-file junit/tested-sha
+          --command-results junit/commands.json
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request' && always()
+        with:
+          name: adc-evidence
+          path: .agent-delivery/evidence/*.json
+      - name: Validate protocol on main
+        if: github.event_name == 'push'
+        run: uv run adc validate

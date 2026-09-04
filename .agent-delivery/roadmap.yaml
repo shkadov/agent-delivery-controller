@@ -1,0 +1,13 @@
+blocks:
+  - id: PHASE1
+    goal: Define and validate the repository protocol
+    exit_criteria:
+      - Strict models reject all malformed documents
+      - Cross-document ownership and permission invariants are enforced
+      - JSON Schemas are available for editor validation
+  - id: PHASE2
+    goal: Implement local and pull-request checks
+    exit_criteria:
+      - Checks produce deterministic machine-readable evidence
+      - Missing CI test IDs and mismatched SHAs fail closed
+

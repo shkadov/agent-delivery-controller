@@ -1,0 +1,27 @@
+goal: Make coding-agent delivery machine-checkable
+constraints:
+  - GitHub Actions only
+  - No hosted service or database
+repositories:
+  - self
+agents:
+  - automation-bot
+action_ceiling:
+  repository_write: true
+  merge: false
+  external_write: false
+  production_write: false
+  workflow_write: true
+  dependency_write: true
+  infra_write: false
+sensitive_paths:
+  - ".github/workflows/**"
+  - ".agent-delivery/**"
+  - "**/*.lock"
+  - "**/package-lock.json"
+  - "**/requirements*.txt"
+  - "**/pyproject.toml"
+  - "**/.env*"
+  - "**/terraform/**"
+  - "**/infra/**"
+  - "**/Dockerfile*"
