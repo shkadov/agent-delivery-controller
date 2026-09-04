@@ -43,8 +43,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --locked
-      - name: Resolve task from trusted commit trailers
+      - name: Resolve optional task from commit trailers
         if: github.event_name == 'pull_request'
+        id: task
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -54,18 +55,25 @@ jobs:
             | git interpret-trailers --parse \
             | sed -n 's/^ADC-Task: //p' \
             | sort -u > junit/task-id
-          test "$(wc -l < junit/task-id | tr -d ' ')" = 1
+          count="$(wc -l < junit/task-id | tr -d ' ')"
+          test "$count" -le 1
+          if test "$count" = 1; then
+            echo "id=$(cat junit/task-id)" >> "$GITHUB_OUTPUT"
+          fi
           printf '%s\n' "$HEAD_SHA" > junit/tested-sha
       - name: Run task verification commands
-        if: github.event_name == 'pull_request'
-        run: uv run adc ci-run "$(cat junit/task-id)" --result junit/commands.json
+        if: github.event_name == 'pull_request' && steps.task.outputs.id != ''
+        run: uv run adc ci-run "${{ steps.task.outputs.id }}" --result junit/commands.json
+      - name: Run project tests for a human pull request
+        if: github.event_name == 'pull_request' && steps.task.outputs.id == ''
+        run: uv run pytest --junitxml=junit/all.xml
       - name: Produce corroborating pull request evidence
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.task.outputs.id != ''
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: >-
-          uv run adc check "$(cat junit/task-id)" --pr "$PR_NUMBER"
+          uv run adc check "${{ steps.task.outputs.id }}" --pr "$PR_NUMBER"
           --junit junit --tested-sha-file junit/tested-sha
           --command-results junit/commands.json
       - name: Run project tests on main

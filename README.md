@@ -23,9 +23,8 @@ uv run pytest
 
 ## Known limitations
 
-- The trusted pull-request policy workflow has not been split from the head-controlled test
-  workflow yet. Until it is split and required by branch protection, an agent can weaken its own
-  checks.
+- Policy enforcement runs from the protected base branch with read-only permissions and never
+  executes pull-request code.
 - Junit produced by a head-controlled workflow is corroborating evidence, not tamper-proof proof.
 - The pull-request path has fixture coverage but has not completed a real bot-authored PR run.
 - Status values are schema-validated; lifecycle transitions are not yet enforced.
