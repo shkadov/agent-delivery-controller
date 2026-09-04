@@ -1,11 +1,11 @@
 # Agent Delivery Controller
 
-ADC is a small control plane for machine-checkable coding-agent delivery. It validates task
-scope, permissions, verification evidence, and lifecycle transitions while leaving source
-control and CI enforcement to GitHub.
+ADC defines a machine-readable delivery protocol for coding agents and provides a small reference
+CLI that validates task scope, permissions, and verification evidence. Source-control and CI
+enforcement remain with GitHub.
 
-The project is in its protocol-foundation phase. `adc validate` and strict JSON Schemas are
-available; execution and evidence collection in `adc check` follow in Phase 2.
+Start with [the protocol specification](docs/protocol.md). The implementation is still being
+dogfooded and is not a finished controller.
 
 ## Development
 
@@ -13,6 +13,7 @@ Requires Python 3.12 and `uv`.
 
 ```console
 uv sync
+git config core.hooksPath hooks
 uv run adc validate
 uv run adc schema --output docs/schema
 uv run ruff check .
@@ -20,4 +21,15 @@ uv run mypy
 uv run pytest
 ```
 
-See [docs/protocol.md](docs/protocol.md) for the repository protocol.
+## Known limitations
+
+- The trusted pull-request policy workflow has not been split from the head-controlled test
+  workflow yet. Until it is split and required by branch protection, an agent can weaken its own
+  checks.
+- Junit produced by a head-controlled workflow is corroborating evidence, not tamper-proof proof.
+- The pull-request path has fixture coverage but has not completed a real bot-authored PR run.
+- Status values are schema-validated; lifecycle transitions are not yet enforced.
+
+## License
+
+Apache License 2.0. See `LICENSE`.

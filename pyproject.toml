@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Machine-checkable delivery controls for coding agents"
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "Proprietary" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dependencies = [
   "click>=8.1,<9",
   "pydantic>=2.9,<3",
@@ -44,4 +45,3 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.12"
 strict = true
 files = ["adc", "tests"]
-
