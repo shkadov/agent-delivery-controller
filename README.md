@@ -28,6 +28,8 @@ uv run pytest
 - Junit produced by a head-controlled workflow is corroborating evidence, not tamper-proof proof.
 - The pull-request path has fixture coverage but has not completed a real bot-authored PR run.
 - Status values are schema-validated; lifecycle transitions are not yet enforced.
+- The repository owner has a recovery bypass limited to pull requests; it cannot directly push to
+  `main`.
 
 ## License
 

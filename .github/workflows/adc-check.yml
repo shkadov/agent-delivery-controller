@@ -47,15 +47,21 @@ jobs:
             | git interpret-trailers --parse \
             | sed -n 's/^ADC-Task: //p' \
             | sort -u > task-ids
-          test "$(wc -l < task-ids | tr -d ' ')" = 1
-          echo "id=$(cat task-ids)" >> "$GITHUB_OUTPUT"
+          count="$(wc -l < task-ids | tr -d ' ')"
+          test "$count" -eq 1 \
+            || { echo "expected exactly one ADC-Task trailer, found $count"; exit 1; }
+          task_id="$(head -n 1 task-ids)"
+          printf '%s\n' "$task_id" | grep -qE '^[A-Z][A-Z0-9_-]*$' \
+            || { echo "malformed task id: $task_id"; exit 1; }
+          echo "id=$task_id" >> "$GITHUB_OUTPUT"
       - name: Enforce policy using base code and API metadata
         if: steps.identity.outputs.governed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: uv run adc check "${{ steps.task.outputs.id }}" --pr "$PR_NUMBER" --policy-only
+          TASK_ID: ${{ steps.task.outputs.id }}
+        run: uv run adc check "$TASK_ID" --pr "$PR_NUMBER" --policy-only
       - name: Record human exemption
         if: steps.identity.outputs.governed != 'true'
         run: echo 'Actor is not listed as an ADC agent; repository review policy applies.'
