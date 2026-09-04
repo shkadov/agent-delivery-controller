@@ -63,7 +63,9 @@ jobs:
           printf '%s\n' "$HEAD_SHA" > junit/tested-sha
       - name: Run task verification commands
         if: github.event_name == 'pull_request' && steps.task.outputs.id != ''
-        run: uv run adc ci-run "${{ steps.task.outputs.id }}" --result junit/commands.json
+        env:
+          TASK_ID: ${{ steps.task.outputs.id }}
+        run: uv run adc ci-run "$TASK_ID" --result junit/commands.json
       - name: Run project tests for a human pull request
         if: github.event_name == 'pull_request' && steps.task.outputs.id == ''
         run: uv run pytest --junitxml=junit/all.xml
@@ -72,8 +74,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          TASK_ID: ${{ steps.task.outputs.id }}
         run: >-
-          uv run adc check "${{ steps.task.outputs.id }}" --pr "$PR_NUMBER"
+          uv run adc check "$TASK_ID" --pr "$PR_NUMBER"
           --junit junit --tested-sha-file junit/tested-sha
           --command-results junit/commands.json
       - name: Run project tests on main
