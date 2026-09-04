@@ -108,23 +108,50 @@ def check_pull_request(
     junit_paths: Sequence[Path],
     command_evidence: Sequence[CommandEvidence] = (),
 ) -> CheckOutcome:
+    policy = check_pull_request_policy(
+        product,
+        task,
+        actor=actor,
+        changed_files=changed_files,
+        commits=commits,
+    )
     if actor not in product.agents:
-        return CheckOutcome(changed_files=tuple(sorted(changed_files)), commands=(), ci_tests={})
+        return policy
 
-    check_changed_files(product, task, changed_files)
-    if not commits:
-        raise CheckFailed("PR contains no commits")
-    for commit in commits:
-        check_author(commit.author, task, context=f"commit {commit.sha}")
-        check_task_trailer(commit.message, task, context=f"commit {commit.sha}")
     check_tested_sha(pr_head_sha, tested_sha)
     check_commands(task, command_evidence)
     observed = read_junit(junit_paths)
     required = require_ci_tests(task, observed)
     return CheckOutcome(
-        changed_files=tuple(sorted(changed_files)),
+        changed_files=policy.changed_files,
         commands=tuple(command_evidence),
         ci_tests=required,
+    )
+
+
+def check_pull_request_policy(
+    product: Product,
+    task: Task,
+    *,
+    actor: str,
+    changed_files: Sequence[str],
+    commits: Sequence[CommitIdentity],
+) -> CheckOutcome:
+    """Evaluate PR policy using only base-branch configuration and API metadata."""
+    if actor not in product.agents:
+        return CheckOutcome(changed_files=tuple(sorted(changed_files)), commands=(), ci_tests={})
+
+    if actor != task.owner:
+        raise CheckFailed(f"PR actor {actor!r} does not match task owner {task.owner!r}")
+    check_changed_files(product, task, changed_files)
+    if not commits:
+        raise CheckFailed("PR contains no commits")
+    for commit in commits:
+        check_task_trailer(commit.message, task, context=f"commit {commit.sha}")
+    return CheckOutcome(
+        changed_files=tuple(sorted(changed_files)),
+        commands=(),
+        ci_tests={},
     )
 
 

@@ -1,0 +1,61 @@
+name: adc-check
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  adc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Classify pull request actor from base policy
+        id: identity
+        env:
+          ACTOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if uv run python -c \
+            'import os; from pathlib import Path; from adc.validate import load_protocol; raise SystemExit(os.environ["ACTOR"] not in load_protocol(Path(".agent-delivery")).product.agents)'
+          then
+            echo 'governed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'governed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Resolve one task from API commit trailers
+        if: steps.identity.outputs.governed == 'true'
+        id: task
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/$REPOSITORY/pulls/$PR_NUMBER/commits?per_page=100" --paginate \
+            --jq '.[].commit.message' \
+            | git interpret-trailers --parse \
+            | sed -n 's/^ADC-Task: //p' \
+            | sort -u > task-ids
+          test "$(wc -l < task-ids | tr -d ' ')" = 1
+          echo "id=$(cat task-ids)" >> "$GITHUB_OUTPUT"
+      - name: Enforce policy using base code and API metadata
+        if: steps.identity.outputs.governed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: uv run adc check "${{ steps.task.outputs.id }}" --pr "$PR_NUMBER" --policy-only
+      - name: Record human exemption
+        if: steps.identity.outputs.governed != 'true'
+        run: echo 'Actor is not listed as an ADC agent; repository review policy applies.'

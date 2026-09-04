@@ -39,7 +39,7 @@ def product_data() -> dict[str, Any]:
         "goal": "Reliable delivery",
         "constraints": ["GitHub Actions only"],
         "repositories": ["example/repo"],
-        "agents": ["agent-bot"],
+        "agents": ["automation-bot", "different-bot"],
         "action_ceiling": {
             "repository_write": True,
             "merge": False,
@@ -86,9 +86,23 @@ def models(files: list[str] | None = None, **permissions: bool) -> tuple[Product
 
 
 def successful_command(task: Task) -> list[CommandEvidence]:
-    return [
-        CommandEvidence(command=task.verification.commands[0], exit_code=0, output_sha256="a" * 64)
-    ]
+    return [CommandEvidence(command=task.verification.commands[0], exit_code=0)]
+
+
+def test_pr_actor_must_match_owner() -> None:
+    product, task = models()
+
+    with pytest.raises(CheckFailed, match="does not match task owner"):
+        check_pull_request(
+            product,
+            task,
+            actor="different-bot",
+            changed_files=["owned.py"],
+            commits=[CommitIdentity("a" * 40, "irrelevant", "ADC-Task: B02")],
+            pr_head_sha="a" * 40,
+            tested_sha="a" * 40,
+            junit_paths=[],
+        )
 
 
 def test_file_outside_scope_fails() -> None:
@@ -146,7 +160,7 @@ def test_pr_head_mismatch_fails() -> None:
         check_pull_request(
             product,
             task,
-            actor="agent-bot",
+            actor="automation-bot",
             changed_files=["owned.py"],
             commits=[CommitIdentity("a" * 40, "automation-bot", "ADC-Task: B02")],
             pr_head_sha="a" * 40,
@@ -167,7 +181,7 @@ def test_missing_ci_test_fails(tmp_path: Path) -> None:
         check_pull_request(
             product,
             task,
-            actor="agent-bot",
+            actor="automation-bot",
             changed_files=["owned.py"],
             commits=[CommitIdentity("a" * 40, "automation-bot", "ADC-Task: B02")],
             pr_head_sha="a" * 40,
@@ -188,7 +202,7 @@ def test_fully_qualified_ci_test_passes(tmp_path: Path) -> None:
     outcome = check_pull_request(
         product,
         task,
-        actor="agent-bot",
+        actor="automation-bot",
         changed_files=["owned.py"],
         commits=[CommitIdentity("a" * 40, "automation-bot", "ADC-Task: B02")],
         pr_head_sha="a" * 40,

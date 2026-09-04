@@ -11,17 +11,11 @@
         "exit_code": {
           "title": "Exit Code",
           "type": "integer"
-        },
-        "output_sha256": {
-          "pattern": "^[0-9a-f]{64}$",
-          "title": "Output Sha256",
-          "type": "string"
         }
       },
       "required": [
         "command",
-        "exit_code",
-        "output_sha256"
+        "exit_code"
       ],
       "title": "CommandEvidence",
       "type": "object"

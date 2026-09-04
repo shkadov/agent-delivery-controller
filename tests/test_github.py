@@ -16,6 +16,17 @@ def test_pull_request_reads_identity_shas_and_paginated_files(monkeypatch: Monke
             "head": {"sha": "b" * 40},
         },
         [[{"filename": "z.py"}, {"filename": "a.py"}]],
+        [
+            [
+                {
+                    "sha": "c" * 40,
+                    "commit": {
+                        "author": {"name": "automation-bot"},
+                        "message": "feat: change\n\nADC-Task: B02",
+                    },
+                }
+            ]
+        ],
     ]
 
     def fake_run(*args: object, **kwargs: object) -> CompletedProcess[str]:
@@ -31,6 +42,7 @@ def test_pull_request_reads_identity_shas_and_paginated_files(monkeypatch: Monke
     assert pull.base_sha == "a" * 40
     assert pull.head_sha == "b" * 40
     assert pull.changed_files == ("a.py", "z.py")
+    assert pull.commits[0].sha == "c" * 40
 
 
 def test_self_repository_comes_from_actions_environment(monkeypatch: MonkeyPatch) -> None:

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import subprocess
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from adc.check import (
     TestStatus,
     check_local,
     check_pull_request,
+    check_pull_request_policy,
     compare_scoped_blobs,
 )
 from adc.evidence import read_command_evidence, write_command_evidence, write_evidence
@@ -95,12 +95,10 @@ def ci_run_command(task_id: str, protocol_dir: Path, result: Path) -> None:
         completed = subprocess.run(command, shell=True, check=False, capture_output=True)
         click.echo(completed.stdout.decode(errors="replace"), nl=False)
         click.echo(completed.stderr.decode(errors="replace"), nl=False, err=True)
-        output = completed.stdout + b"\0" + completed.stderr
         evidence.append(
             CommandEvidence(
                 command=command,
                 exit_code=completed.returncode,
-                output_sha256=hashlib.sha256(output).hexdigest(),
             )
         )
         if completed.returncode != 0:
@@ -131,6 +129,11 @@ def ci_run_command(task_id: str, protocol_dir: Path, result: Path) -> None:
 @click.option("--junit", "junit_paths", multiple=True, type=click.Path(path_type=Path, exists=True))
 @click.option("--tested-sha-file", type=click.Path(path_type=Path, dir_okay=False, exists=True))
 @click.option("--command-results", type=click.Path(path_type=Path, dir_okay=False, exists=True))
+@click.option(
+    "--policy-only",
+    is_flag=True,
+    help="Evaluate policy from trusted base code without reading CI artifacts.",
+)
 @click.option("--reviewed-sha")
 @click.option("--merged-sha")
 def check_command(
@@ -144,6 +147,7 @@ def check_command(
     junit_paths: tuple[Path, ...],
     tested_sha_file: Path | None,
     command_results: Path | None,
+    policy_only: bool,
     reviewed_sha: str | None,
     merged_sha: str | None,
 ) -> None:
@@ -163,22 +167,35 @@ def check_command(
             return
 
         if pr_number is not None:
-            if tested_sha_file is None or command_results is None or not junit_paths:
-                raise click.UsageError(
-                    "--pr requires --tested-sha-file, --command-results, and at least one --junit"
-                )
             github = GitHubClient(protocol.product.repositories[0])
             pull = github.pull_request(pr_number)
             if pull.actor not in protocol.product.agents:
                 click.echo(f"exempt: PR #{pr_number} actor {pull.actor!r} is not an ADC agent")
                 return
+            if policy_only:
+                outcome = check_pull_request_policy(
+                    protocol.product,
+                    task,
+                    actor=pull.actor,
+                    changed_files=pull.changed_files,
+                    commits=pull.commits,
+                )
+                click.echo(
+                    f"passed: {task.id} PR #{pr_number} policy "
+                    f"({len(outcome.changed_files)} changed file(s))"
+                )
+                return
+            if tested_sha_file is None or command_results is None or not junit_paths:
+                raise click.UsageError(
+                    "--pr requires --tested-sha-file, --command-results, and at least one --junit"
+                )
             tested_sha = tested_sha_file.read_text(encoding="utf-8").strip()
             outcome = check_pull_request(
                 protocol.product,
                 task,
                 actor=pull.actor,
                 changed_files=pull.changed_files,
-                commits=repo.commits(pull.base_sha, pull.head_sha),
+                commits=pull.commits,
                 pr_head_sha=pull.head_sha,
                 tested_sha=tested_sha,
                 junit_paths=junit_paths,

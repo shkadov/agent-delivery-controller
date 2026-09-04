@@ -17,13 +17,13 @@ scope:
     - tests/test_check.py
     - tests/test_evidence.py
     - tests/test_github.py
-  max_files: 13
+  max_files: 8
 permissions:
   repository_write: true
   merge: false
   external_write: false
   production_write: false
-  workflow_write: true
+  workflow_write: false
   dependency_write: false
   infra_write: false
 acceptance:

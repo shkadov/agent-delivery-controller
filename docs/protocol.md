@@ -124,16 +124,27 @@ trailer. Verification commands run only in CI and emit junit; the dependent `adc
 evaluates that artifact. `git commit --no-verify` remains an escape hatch because the PR job repeats
 all checks against every commit.
 
-Agent pull requests are recognized by `product.yaml: agents`. Human actors are exempt from ADC and
+Agent pull requests are recognized by `product.yaml: agents`. The PR actor must match the task
+owner; commit author names are only a local early signal. Human actors are exempt from ADC and
 continue to be governed by CODEOWNERS and branch protection.
 
-The test job derives one task ID from the commits' `ADC-Task` trailers, records the exact PR head in
-the junit artifact, and runs `adc ci-run TASK`. The dependent job invokes:
+The authoritative `adc-check` policy job uses `pull_request_target`, checks out only the base SHA,
+and reads the actor, commits, trailers, changed files, and head SHA through the API. It never checks
+out or executes code from the pull-request head. Its token is read-only and receives no secrets.
+
+The head-controlled test job pins checkout to the durable PR head SHA, derives one task ID from the
+commits' `ADC-Task` trailers, records that SHA in the junit artifact, and runs `adc ci-run TASK`.
+It then invokes:
 
 ```console
 adc check TASK --pr NUMBER --junit junit --tested-sha-file junit/tested-sha \
   --command-results junit/commands.json
 ```
+
+The junit artifact and command exit codes are corroborating evidence, not tamper-proof proof: the
+head branch controls the workflow that creates them. Enforcement comes from the separately required
+base-controlled `adc-check` plus required CI check names. Removing a required job leaves its check
+pending and makes the pull request unmergeable.
 
 After merge, the controller compares each scoped blob rather than root trees:
 

@@ -147,7 +147,6 @@ class Task(StrictModel):
 class CommandEvidence(StrictModel):
     command: NonEmpty
     exit_code: int
-    output_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 
 
 class EvidenceBody(StrictModel):
